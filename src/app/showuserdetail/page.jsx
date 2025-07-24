@@ -99,7 +99,7 @@ export default function ViewOrders() {
             <th className="p-2 border">Standee Type</th>
             <th className="p-2 border">Icons</th>
             <th className="p-2 border">Other Icons</th>
-            <th className="p-2 border">Logo</th>
+            <th className="p-2 border">Logo Is</th>
             <th className="p-2 border">UPI QR</th>
             <th className="p-2 border">Download Logo</th>
             <th className="p-2 border">Created At</th>

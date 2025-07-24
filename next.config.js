@@ -1,18 +1,12 @@
-// /** @type {import('next').NextConfig} */
-// const nextConfig = {
-//   output: 'export',
-// };
-
-// module.exports = nextConfig;
-
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    appDir: true, // only include this if you're using /app folder
+    appDir: true,
   },
-  // You can add more options here if needed
+  env: {
+    MONGODB_URI: "mongodb+srv://erarjunsingh32085:123@cluster0.zvimsjg.mongodb.net/bharattapp?retryWrites=true&w=majority&appName=Cluster0", // expose if needed (optional)
+  },
 };
 
 module.exports = nextConfig;

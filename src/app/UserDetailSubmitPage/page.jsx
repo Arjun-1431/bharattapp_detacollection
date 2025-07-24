@@ -16,6 +16,7 @@ export default function StepperForm() {
     standee_type: "",
     other_icons: "",
   });
+  const [errors, setErrors] = useState({});
   const [icons, setIcons] = useState([]);
   const [logoFile, setLogoFile] = useState(null);
   const [upiQR, setUpiQR] = useState(null);
@@ -36,12 +37,28 @@ export default function StepperForm() {
     return formData.standee_type && !hideTypes.includes(formData.standee_type);
   };
 
+  const validateStep1 = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    else if (!/^\d{10}$/.test(formData.phone.trim()))
+      newErrors.phone = "Phone must be 10 digits";
+    if (!logoFile) newErrors.logo = "Logo file is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const newErrors = {};
+    if (!formData.standee_type) newErrors.standee_type = "Please select a standee type";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    if (e.target.name === "standee_type") {
-      console.log("[Standee Type Changed]", e.target.value);
-      setIcons([]);
-    }
+    setErrors((prev) => ({ ...prev, [e.target.name]: null }));
+    if (e.target.name === "standee_type") setIcons([]);
   };
 
   const handleIconChange = (e) => {
@@ -51,71 +68,53 @@ export default function StepperForm() {
 
     if (isChecked) {
       if (iconLimit && icons.length >= iconLimit) {
-        console.warn(`[Icon Limit Reached] Limit: ${iconLimit}`);
         toast.warn(`You can select up to ${iconLimit} icon(s) only.`);
         return;
       }
       setIcons((prev) => [...prev, value]);
-      console.log(`[Icon Selected]`, value);
     } else {
       setIcons((prev) => prev.filter((i) => i !== value));
-      console.log(`[Icon Deselected]`, value);
     }
   };
 
   const handleNext = () => {
-    if (step === 0 && (!formData.name || !formData.phone || !logoFile)) {
-      console.warn("[Step 1 Validation Failed]", { ...formData, logoFile });
-      toast.error("Please fill required fields and upload logo");
-      return;
-    }
-    console.log("[Navigation] Next Step:", step + 1);
+    if (step === 0 && !validateStep1()) return;
     setStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
 
   const handleBack = () => {
-    console.log("[Navigation] Back Step:", step - 1);
     setStep((prev) => Math.max(prev - 1, 0));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateStep2()) return;
+
     const form = new FormData();
     Object.entries(formData).forEach(([key, val]) => form.append(key, val));
     form.append("icons_selected", icons.join(","));
     form.append("logo", logoFile);
     if (upiQR) form.append("upi_qr", upiQR);
 
-    console.log("[Submit] FormData Payload:", {
-      ...formData,
-      icons_selected: icons,
-      logoFile,
-      upiQR,
-    });
-
     try {
       const res = await fetch("/api/userDataSubmit", {
         method: "POST",
         body: form,
       });
-
       const json = await res.json();
-      console.log("[Submit] Server Response:", json);
-
       if (res.ok) {
         toast.success(json.message);
         setStep(0);
-        console.log("[Submit Success]");
+        setFormData({ name: "", phone: "", address: "", standee_type: "", other_icons: "" });
+        setLogoFile(null);
+        setIcons([]);
       } else {
         toast.error(json.message || "Submission failed");
-        console.error("[Submit Error]", json);
       }
     } catch (err) {
       toast.error("Network error");
-      console.error("[Network Error]", err);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 p-4 flex items-center justify-center">
       <div className="max-w-3xl w-full p-6 bg-white/70 backdrop-blur-md shadow-xl rounded-xl">

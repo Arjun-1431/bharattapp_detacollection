@@ -1,5 +1,3 @@
-// src/app/api/getallusersDetail/route.js
-
 import { NextResponse } from 'next/server';
 import clientPromise from '@/app/lib/db';
 
@@ -13,9 +11,33 @@ export async function GET() {
       .sort({ created_at: -1 })
       .toArray();
 
-    return NextResponse.json({ success: true, data: orders });
+    // Format and sanitize if needed
+    const formatted = orders.map((order) => ({
+      name: order.name,
+      phone: order.phone,
+      standee_type: order.standee_type,
+      icons_selected: order.icons_selected || [],
+      other_icons: order.other_icons || '',
+      logo_url: order.logo_url || null,
+      upi_qr_url: order.upi_qr_url || null,
+      created_at: order.created_at,
+    }));
+
+    return NextResponse.json(
+      { success: true, data: formatted },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store', // 🧠 Ensure fresh fetch
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   } catch (error) {
-    console.error('GET API Error:', error);
-    return NextResponse.json({ success: false, message: 'Failed to fetch data' }, { status: 500 });
+    console.error('[GET Error]', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch orders' },
+      { status: 500 }
+    );
   }
 }

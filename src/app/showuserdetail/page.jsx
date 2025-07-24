@@ -1,7 +1,7 @@
 import Image from 'next/image';
 
 async function getOrders() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/getallusersDetail`, {
+  const res = await fetch(`/api/getallusersDetail`, {
     cache: 'no-store', // force fresh fetch every time
   });
 

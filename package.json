@@ -20,6 +20,7 @@
     "canvas-toBlob": "^1.0.0",
     "chart.js": "^4.4.5",
     "chartjs-plugin-datalabels": "^2.2.0",
+    "cloudinary": "^2.7.0",
     "csv": "^6.3.11",
     "docxtemplater": "^3.52.0",
     "dom-to-image": "^2.6.0",

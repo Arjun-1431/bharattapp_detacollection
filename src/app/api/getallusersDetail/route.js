@@ -7,15 +7,31 @@ export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db('bharattapp');
+
     const orders = await db
       .collection('standee_orders')
       .find({})
       .sort({ created_at: -1 })
       .toArray();
 
-    return NextResponse.json({ success: true, data: orders });
+    // Optional: map data for cleaner response (remove _id, rename fields, etc.)
+    const formatted = orders.map((order) => ({
+      name: order.name,
+      phone: order.phone,
+      standee_type: order.standee_type,
+      icons_selected: order.icons_selected,
+      other_icons: order.other_icons || '',
+      logo_url: order.logo_url || null,       // Cloudinary-hosted
+      upi_qr_url: order.upi_qr_url || null,   // Cloudinary-hosted
+      created_at: order.created_at,
+    }));
+
+    return NextResponse.json({ success: true, data: formatted });
   } catch (error) {
-    console.error('GET API Error:', error);
-    return NextResponse.json({ success: false, message: 'Failed to fetch data' }, { status: 500 });
+    console.error('[GET Users Error]', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch data' },
+      { status: 500 }
+    );
   }
 }

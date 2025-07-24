@@ -12,11 +12,17 @@ export default function ViewOrders() {
 
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch('/api/getallusersDetail');
-      const json = await res.json();
-      if (json.success) {
-        setOrders(json.data);
-        setFilteredOrders(json.data);
+      try {
+        const res = await fetch('/api/getallusersDetail');
+        const json = await res.json();
+        if (json.success) {
+          setOrders(json.data);
+          setFilteredOrders(json.data);
+        } else {
+          console.error('[API Error]', json.message);
+        }
+      } catch (err) {
+        console.error('[Network Error]', err);
       }
     }
 
@@ -31,7 +37,7 @@ export default function ViewOrders() {
         order.phone.toLowerCase().includes(lower)
     );
     setFilteredOrders(filtered);
-    setCurrentPage(1); // Reset to page 1 on search
+    setCurrentPage(1);
   }, [search, orders]);
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
@@ -41,13 +47,35 @@ export default function ViewOrders() {
     return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredOrders, currentPage]);
 
-  const handleDownload = (url, fileName) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+  const getFileExtension = (mimeType) => {
+    const map = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/svg+xml': 'svg',
+    };
+    return map[mimeType] || 'png';
+  };
+
+  const handleDownload = async (url, baseName) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const extension = getFileExtension(blob.type);
+      const fileName = `${baseName}.${extension}`;
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('[Download Error]', err);
+    }
   };
 
   return (
@@ -81,23 +109,27 @@ export default function ViewOrders() {
           {paginatedOrders.map((order, index) => {
             const hasUPI = order.icons_selected?.includes('UPI');
             return (
-              <tr key={order.id} className="text-center">
+              <tr key={index} className="text-center">
                 <td className="p-2 border">
                   {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                 </td>
                 <td className="p-2 border">{order.name}</td>
                 <td className="p-2 border">{order.phone}</td>
                 <td className="p-2 border">{order.standee_type}</td>
-                <td className="p-2 border">{order.icons_selected}</td>
+                <td className="p-2 border">
+                  {Array.isArray(order.icons_selected)
+                    ? order.icons_selected.join(', ')
+                    : '--'}
+                </td>
                 <td className="p-2 border">
                   {order.other_icons?.trim() ? order.other_icons : '--'}
                 </td>
                 <td className="p-2 border">
-                  {order.logo_file ? (
+                  {order.logo_url ? (
                     <img
-                      src={order.logo_file}
+                      src={order.logo_url}
                       alt="Logo"
-                      className="h-12 mx-auto"
+                      className="h-12 mx-auto rounded"
                     />
                   ) : (
                     'No Logo'
@@ -105,16 +137,16 @@ export default function ViewOrders() {
                 </td>
                 <td className="p-2 border">
                   {hasUPI ? (
-                    order.upi_qr_file ? (
+                    order.upi_qr_url ? (
                       <div className="flex flex-col items-center gap-1">
                         <img
-                          src={order.upi_qr_file}
+                          src={order.upi_qr_url}
                           alt="UPI QR"
                           className="h-12 mx-auto"
                         />
                         <button
                           onClick={() =>
-                            handleDownload(order.upi_qr_file, `${order.phone}-upi.png`)
+                            handleDownload(order.upi_qr_url, `${order.phone}-upi`)
                           }
                           className="text-blue-600 underline text-sm"
                         >
@@ -122,23 +154,17 @@ export default function ViewOrders() {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        disabled
-                        className="text-gray-400 text-sm cursor-not-allowed"
-                        title="UPI QR not uploaded"
-                      >
-                        Download UPI
-                      </button>
+                      <span className="text-gray-500 text-sm">No QR</span>
                     )
                   ) : (
                     '--'
                   )}
                 </td>
                 <td className="p-2 border">
-                  {order.logo_file ? (
+                  {order.logo_url ? (
                     <button
                       onClick={() =>
-                        handleDownload(order.logo_file, `${order.phone}.png`)
+                        handleDownload(order.logo_url, `${order.phone}-logo`)
                       }
                       className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                     >
@@ -151,8 +177,14 @@ export default function ViewOrders() {
                 <td className="p-2 border">
                   {order.created_at ? (
                     <div>
-                      <b><div>{new Date(order.created_at).toLocaleDateString()}</div></b>
-                      <div>{new Date(order.created_at).toLocaleTimeString()}</div>
+                      <b>
+                        <div>
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </div>
+                      </b>
+                      <div>
+                        {new Date(order.created_at).toLocaleTimeString()}
+                      </div>
                     </div>
                   ) : (
                     '--'

@@ -116,7 +116,7 @@ export default function ViewOrders() {
           <table className="table-auto w-full border border-gray-300">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-2 border">Serial Number</th>
+                <th className="p-2 border">S.No.</th>
                 <th className="p-2 border">Name</th>
                 <th className="p-2 border">Phone</th>
                 <th className="p-2 border">Standee Type</th>

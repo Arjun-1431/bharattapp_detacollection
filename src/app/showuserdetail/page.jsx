@@ -1,0 +1,197 @@
+'use client';
+
+import { useEffect, useState, useMemo } from 'react';
+
+export default function ViewOrders() {
+  const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 20;
+
+  useEffect(() => {
+    async function fetchData() {
+      const res = await fetch('/api/getallusersDetail');
+      const json = await res.json();
+      if (json.success) {
+        setOrders(json.data);
+        setFilteredOrders(json.data);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const lower = search.toLowerCase();
+    const filtered = orders.filter(
+      (order) =>
+        order.name.toLowerCase().includes(lower) ||
+        order.phone.toLowerCase().includes(lower)
+    );
+    setFilteredOrders(filtered);
+    setCurrentPage(1); // Reset to page 1 on search
+  }, [search, orders]);
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredOrders, currentPage]);
+
+  const handleDownload = (url, fileName) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  return (
+    <div className="p-6 overflow-x-auto">
+      <h2 className="text-2xl font-bold mb-4">Standee Orders</h2>
+
+      <input
+        type="text"
+        placeholder="Search by name or phone"
+        className="border p-2 mb-4 w-full max-w-md"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      <table className="table-auto w-full border border-gray-300">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="p-2 border">Serial Number</th>
+            <th className="p-2 border">Name</th>
+            <th className="p-2 border">Phone</th>
+            <th className="p-2 border">Standee Type</th>
+            <th className="p-2 border">Icons</th>
+            <th className="p-2 border">Other Icons</th>
+            <th className="p-2 border">Logo</th>
+            <th className="p-2 border">UPI QR</th>
+            <th className="p-2 border">Download Logo</th>
+            <th className="p-2 border">Created At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedOrders.map((order, index) => {
+            const hasUPI = order.icons_selected?.includes('UPI');
+            return (
+              <tr key={order.id} className="text-center">
+                <td className="p-2 border">
+                  {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                </td>
+                <td className="p-2 border">{order.name}</td>
+                <td className="p-2 border">{order.phone}</td>
+                <td className="p-2 border">{order.standee_type}</td>
+                <td className="p-2 border">{order.icons_selected}</td>
+                <td className="p-2 border">
+                  {order.other_icons?.trim() ? order.other_icons : '--'}
+                </td>
+                <td className="p-2 border">
+                  {order.logo_file ? (
+                    <img
+                      src={order.logo_file}
+                      alt="Logo"
+                      className="h-12 mx-auto"
+                    />
+                  ) : (
+                    'No Logo'
+                  )}
+                </td>
+                <td className="p-2 border">
+                  {hasUPI ? (
+                    order.upi_qr_file ? (
+                      <div className="flex flex-col items-center gap-1">
+                        <img
+                          src={order.upi_qr_file}
+                          alt="UPI QR"
+                          className="h-12 mx-auto"
+                        />
+                        <button
+                          onClick={() =>
+                            handleDownload(order.upi_qr_file, `${order.phone}-upi.png`)
+                          }
+                          className="text-blue-600 underline text-sm"
+                        >
+                          Download UPI
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        disabled
+                        className="text-gray-400 text-sm cursor-not-allowed"
+                        title="UPI QR not uploaded"
+                      >
+                        Download UPI
+                      </button>
+                    )
+                  ) : (
+                    '--'
+                  )}
+                </td>
+                <td className="p-2 border">
+                  {order.logo_file ? (
+                    <button
+                      onClick={() =>
+                        handleDownload(order.logo_file, `${order.phone}.png`)
+                      }
+                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    >
+                      Download
+                    </button>
+                  ) : (
+                    '--'
+                  )}
+                </td>
+                <td className="p-2 border">
+                  {order.created_at ? (
+                    <div>
+                      <b><div>{new Date(order.created_at).toLocaleDateString()}</div></b>
+                      <div>{new Date(order.created_at).toLocaleTimeString()}</div>
+                    </div>
+                  ) : (
+                    '--'
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* Pagination Controls */}
+      <div className="mt-4 flex justify-center gap-2 items-center">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentPage(i + 1)}
+            className={`px-3 py-1 border rounded ${
+              currentPage === i + 1 ? 'bg-blue-500 text-white' : ''
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextjs_app
+    ports:
+      - "3000:3000"
+    networks:
+      - bharattapp_mynetwork # Ensure it's on the same network if needed
+
+networks:
+  bharattapp_mynetwork:
+    external: true
+      # Remove Redis-related environment variables
+    # Remove the depends_on section since there's no Redis service

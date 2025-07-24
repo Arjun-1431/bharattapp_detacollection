@@ -1,4 +1,3 @@
-// src/app/api/getallusersDetail/route.js
 import { NextResponse } from 'next/server';
 import clientPromise from '@/app/lib/db';
 

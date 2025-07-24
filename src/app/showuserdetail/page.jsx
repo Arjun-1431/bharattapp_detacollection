@@ -15,7 +15,9 @@ export default function ViewOrders() {
     async function fetchData() {
       try {
         setLoading(true);
-        const res = await fetch('/api/getallusersDetail');
+        const res = await fetch('/api/getallusersDetail', {
+          cache: 'no-store',
+        });
         const json = await res.json();
         if (json.success) {
           setOrders(json.data);
@@ -30,7 +32,10 @@ export default function ViewOrders() {
       }
     }
 
-    fetchData();
+    fetchData(); // Initial fetch
+
+    const interval = setInterval(fetchData, 10000); // Repeat every 10 sec
+    return () => clearInterval(interval); // Cleanup
   }, []);
 
   useEffect(() => {
@@ -214,7 +219,6 @@ export default function ViewOrders() {
             </tbody>
           </table>
 
-          {/* Pagination Controls */}
           <div className="mt-4 flex justify-center gap-2 items-center">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}

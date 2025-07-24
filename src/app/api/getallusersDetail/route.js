@@ -4,7 +4,7 @@ import clientPromise from '@/app/lib/db';
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db('bharattapp'); // This must match the URI db name
+    const db = client.db('bharattapp');
 
     const orders = await db
       .collection('standee_orders')
@@ -23,7 +23,15 @@ export async function GET() {
       created_at: order.created_at,
     }));
 
-    return NextResponse.json({ success: true, data: formatted });
+    return new NextResponse(
+      JSON.stringify({ success: true, data: formatted }),
+      {
+        headers: {
+          'Cache-Control': 'no-store',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   } catch (error) {
     console.error('[GET Users Error]', error);
     return NextResponse.json(

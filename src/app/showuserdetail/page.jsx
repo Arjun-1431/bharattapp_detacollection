@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState, useMemo } from 'react';
 
@@ -10,12 +10,11 @@ export default function ViewOrders() {
   const [loading, setLoading] = useState(true);
 
   const ITEMS_PER_PAGE = 20;
-
-  useEffect(() => {
-    async function fetchData() {
+//use axios 
+  async function fetchData() {
       try {
         setLoading(true);
-        const res = await fetch('/api/getallusersDetail');
+        const res = await fetch('/api/getallusersDetail', { cache: "no-store" });
         const json = await res.json();
         if (json.success) {
           setOrders(json.data);
@@ -29,7 +28,8 @@ export default function ViewOrders() {
         setLoading(false);
       }
     }
-
+  
+    useEffect(() => {  
     fetchData();
   }, []);
 
